@@ -47,5 +47,5 @@
   FROM {{ source('test', 'ae_challenge_loans') }}
 
 {% if is_incremental() %}
-    WHERE disbursed_date >= DATE_ADD(CURRENT_DATE(), INTERVAL -15 DAY)
+    WHERE DATE(limit_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -15 DAY)
 {% endif %}
