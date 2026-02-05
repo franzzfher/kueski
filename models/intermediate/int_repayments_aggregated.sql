@@ -6,7 +6,7 @@
         cluster_by = ["user_id", "loan_id"],
         partition_by={
             "field": "last_payment_date", 
-            "data_type": "date",
+            "data_type": "timestamp",
             "granularity": "day"
         } 
     )
