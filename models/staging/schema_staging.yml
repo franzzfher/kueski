@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: stg_loans
+    description: "Staging model for loan data with snapshots"
+    columns:
+      - name: _unique_id
+        description: "Unique identifier for each loan-snapshot combination"
+        tests:
+          - unique
+          - not_null
+      - name: loan_id
+        description: "Loan identifier"
+        tests:
+          - not_null
+      - name: user_id
+        description: "Customer identifier"
+        tests:
+          - not_null
+      - name: disbursed_date
+        description: "Date loan was disbursed"
+      - name: limit_month
+        description: "Snapshot month"
+      - name: delinquency_status
+        description: "Current delinquency status"
+        tests:
+          - accepted_values:
+              values: ['Current', 'Past due (1-29)', 'Past due (30-59)', 'Past due (60-89)', 
+                       'Past due (90-179)', 'Past due (180<)', 'Fully Paid', 'Sold']
+      - name: requested_amount
+        description: "Amount requested by customer"
+      - name: funded_amount
+        description: "Amount actually funded"
+      - name: capital_balance
+        description: "Remaining capital balance"
+      - name: interest_rate
+        description: "Loan interest rate"
+      - name: charge_off
+        description: "Charge-off amount"
+      - name: cogs_total_cost
+        description: "Cost of goods sold"
+      - name: loan_term_months
+        description: "Loan term in months"
+
+  - name: stg_repays
+    description: "Staging model for repayment transactions"
+    columns:
+      - name: repayment_id
+        description: "Unique repayment identifier"
+        tests:
+          - unique
+          - not_null
+      - name: loan_id
+        description: "Loan identifier"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_loans')
+              field: loan_id
+      - name: user_id
+        description: "Customer identifier"
+        tests:
+          - not_null
+      - name: repayment_timestamp
+        description: "Repayment timestamp"
+      - name: repayment_date
+        description: "Repayment date"
+      - name: total_paid_amount
+        description: "Total payment amount"
+      - name: paid_principal
+        description: "Principal portion"
+      - name: paid_interest
+        description: "Interest portion"
+      - name: paid_fees
+        description: "Fees portion"
+      - name: paid_penalties
+        description: "Penalties portion"
+
+  - name: stg_customers
+    description: "Staging model for customer data"
+    columns:
+      - name: user_id
+        description: "Unique customer identifier"
+        tests:
+          - unique
+          - not_null
+      - name: city
+        description: "Customer city"
+      - name: state
+        description: "Customer state"
+      - name: acquisition_date
+        description: "Customer acquisition date"
+      - name: acquisition_channel
+        description: "Acquisition channel"
+      - name: risk_band
+        description: "Risk band assigned at acquisition"
+      - name: cac_amount
+        description: "Customer acquisition cost"
+
+  - name: stg_schedules
+    description: "Staging model for payment schedules"
+    columns:
+      - name: _schedule_id
+        description: "Unique schedule identifier"
+        tests:
+          - unique
+          - not_null
+      - name: loan_id
+        description: "Loan identifier"
+        tests:
+          - not_null
+      - name: expected_due_date
+        description: "Expected payment due date"
+      - name: expected_total_payment
+        description: "Expected total payment amount"
+      - name: expected_principal
+        description: "Expected principal portion"
+      - name: expected_interest
+        description: "Expected interest portion"
+      - name: installment_number
+        description: "Installment sequence number"
