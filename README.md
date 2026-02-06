@@ -1,126 +1,141 @@
-# KueskiPay Portfolio Analysis - dbt Models
 
-This directory contains the complete dbt model structure for the KueskiPay Portfolio Analysis.
+```markdown
+# KueskiPay Portfolio Analytics - dbt Project
 
-## Model Structure
+## Project Overview
+
+This dbt project implements a layered data architecture for analyzing KueskiPay's loan portfolio performance. It follows dbt best practices with staging, intermediate, and mart layers.
+
+## Architecture Layers
+
+```mermaid
+graph TD
+    subgraph "SOURCE LAYER"
+        src1[ae_challenge_loans]
+        src2[ae_challenge_repayments]
+        src3[ae_challenge_customer]
+    end
+
+    subgraph "STAGING LAYER"
+        stg1[stg_loans]
+        stg2[stg_repays]
+        stg3[stg_customers]
+    end
+
+    subgraph "INTERMEDIATE LAYER"
+        int1[int_loan_schedules]
+        int2[int_repayments_aggregated]
+        int3[int_loans_enriched]
+        int4[int_vintage_performance]
+        int5[int_risk_segment_performance]
+    end
+
+    subgraph "MART LAYER"
+        mart1[dim_loans]
+        mart2[fct_vintage_performance]
+        mart3[fct_risk_segment_performance]
+    end
+
+    %% Relationships
+    src1 --> stg1
+    src2 --> stg2
+    src3 --> stg3
+
+    stg1 --> int1
+    stg1 --> int3
+    stg2 --> int2
+    stg3 --> int3
+
+    int1 --> int3
+    int2 --> int3
+
+    int3 --> mart1
+    int3 --> int4
+    int3 --> int5
+
+    int4 --> mart2
+    int5 --> mart3
 
 ```
-models/
-├── sources.yml                    # Source table definitions
-├── schema.yml                     # Model documentation and tests
-│
-├── staging/                       # Staging models (provided by user)
-│   ├── stg_loans.sql
-│   ├── stg_customers.sql
-│   └── stg_repays.sql
-│
-├── intermediate/                  # Intermediate transformations
-│   ├── int_loans_enriched.sql     # Handle snapshot table structure
-│   ├── int_loans_with_repayments.sql  # Join loans + repayments
-│   ├── int_repayments_aggregated.sql  # (provided by user)
-│   └── int_loan_schedules.sql     # (provided by user)
-│
-└── marts/                         # Final analysis tables
-    ├── mart_portfolio_summary.sql     # Loan-level data (Jan-Mar 2025)
-    ├── mart_vintage_summary.sql       # Aggregated by vintage
-    ├── mart_risk_segment_summary.sql  # Aggregated by risk segment
-    ├── mart_ltv_cac_analysis.sql      # Unit economics
-    └── mart_delinquency_analysis.sql  # Status distribution
+
+## Model Details
+
+### Staging Layer (`models/staging/`)
+
+| Model | Description | Materialization |
+| --- | --- | --- |
+| `stg_loans` | Loan snapshots with JSON schedule and status history | Incremental |
+| `stg_repays` | Cleaned repayment transactions | Incremental |
+| `stg_customers` | Customer demographics and acquisition costs | Incremental |
+
+### Intermediate Layer (`models/intermediate/`)
+
+| Model | Description | Materialization |
+| --- | --- | --- |
+| `int_loan_schedules` | Flattened repayment schedules derived from `stg_loans` JSON | Incremental |
+| `int_repayments_aggregated` | Repayments aggregated to the loan level | Incremental |
+| `int_loans_enriched` | The "Golden Record" joining loans, schedules, repayments, and customers | Incremental |
+| `int_vintage_performance` | Aggregated metrics grouped by vintage month | Table |
+| `int_risk_segment_performance` | Aggregated metrics grouped by risk segment | Table |
+
+### Mart Layer (`models/marts/`)
+
+| Model | Description | Materialization |
+| --- | --- | --- |
+| `dim_loans` | Loan dimension view for detailed loan-level analysis | View |
+| `fct_vintage_performance` | Vintage performance facts view | View |
+| `fct_risk_segment_performance` | Risk segment performance facts view | View |
+
+## Key Metrics Calculated
+
+### Financial Metrics
+
+* **Revenue** = Interest + Fees + Penalties
+* **Financial Margin** = Revenue - Charge-offs
+* **Contribution Margin** = Financial Margin - COGS
+* **Net Margin** = Contribution Margin - CAC
+
+### Collection Metrics
+
+* **Principal Collection Rate** = Paid Principal / Expected Principal
+* **Interest Collection Rate** = Paid Interest / Expected Interest
+* **Expected Yield Rate** = Expected Interest / Funded Amount
+* **Actual Yield Rate** = Paid Interest / Funded Amount
+* **Yield Gap** = Expected Yield - Actual Yield
+
+### Risk Metrics
+
+* **Loss Rate** = Charge-offs / Funded Amount
+* **NPL Rate** = NPL Balance / Total Balance (Flagged when DPD > 90 or Charged Off)
+
+## Data Lineage
+
+```text
+stg_loans ──┬──► int_loan_schedules ──┐
+            │                         │
+stg_repays ─┴──► int_repayments_aggregated ──┼──► int_loans_enriched ──┬──► dim_loans
+                                             │                         │
+stg_customers ───────────────────────────────┘                         ├──► int_vintage_performance ──► fct_vintage_performance
+                                                                       │
+                                                                       └──► int_risk_segment_performance ──► fct_risk_segment_performance
+
 ```
 
-## Key Design Decisions
+## Configuration
 
-### 1. Handling the Loans Snapshot Table
+* **Staging & Intermediate:** Configured as `incremental` with `merge` strategy to handle large transaction volumes efficiently.
+* **Marts:** Configured as `view` to provide a lightweight presentation layer over the pre-aggregated intermediate tables.
+* **Partitioning:** Date-based partitioning enabled on large tables.
+* **Clustering:** Key fields (user_id, loan_id, vintage_month) clustered for query performance.
 
-The `ae_challenge_loans` table is a **monthly snapshot table** where each loan has multiple rows (one per month). The `int_loans_enriched` model handles this using window functions:
+## Testing
 
-```sql
--- Get the first non-null founded_amount (origination amount)
-FIRST_VALUE(funded_amount IGNORE NULLS) OVER (
-    PARTITION BY loan_id 
-    ORDER BY limit_month 
-    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-) AS founded_amount_orig
+Each model includes:
 
--- Get the last non-null delinquency status (current status)
-LAST_VALUE(delinquency_status IGNORE NULLS) OVER (...) AS last_delinquency_status
+* `unique` tests for primary keys
+* `not_null` tests for required fields
+* `relationships` tests for foreign keys
+
 ```
 
-### 2. Revenue Calculation
-
-Revenue is calculated as:
-```sql
-total_revenue = paid_interest + paid_fees + paid_penalties
 ```
-
-### 3. Margin Calculations
-
-```sql
-financial_margin = total_revenue - charge_off
-contribution_margin = financial_margin - cogs
-roi = contribution_margin / funded_amount
-```
-
-### 4. Risk Segment Classification
-
-```sql
-CASE 
-    WHEN risk_band IS NULL OR risk_band = 'missing_score' THEN 'Unknown'
-    WHEN risk_band <= 2 THEN 'Low Risk (1-2)'
-    WHEN risk_band <= 3 THEN 'Medium Risk (3)'
-    WHEN risk_band <= 4.2 THEN 'High Risk (4-4.2)'
-    ELSE 'Very High Risk (5+)'
-END
-```
-
-## Running the Models
-
-```bash
-# Run all models
-dbt run
-
-# Run specific model
-dbt run --select mart_vintage_summary
-
-# Run with full refresh
-dbt run --full-refresh
-
-# Test models
-dbt test
-```
-
-## Key Metrics Available
-
-### Portfolio Level
-- Total loans, funded amount, revenue
-- Portfolio ROI, loss rate, yield
-- LTV, CAC, LTV/CAC ratio
-
-### Vintage Level
-- Performance by disbursement month
-- Principal recovery rates
-- Revenue and margin trends
-
-### Risk Segment Level
-- Performance by risk band
-- Portfolio distribution
-- ROI comparison across segments
-
-### Delinquency
-- Status distribution by vintage
-- Roll rate analysis
-- Charge-off patterns
-
-## Data Quality Notes
-
-1. **Founded Amount**: Only populated in first snapshot per loan
-2. **Delinquency Status**: May be NULL for current loans
-3. **Charge-offs**: Summed across all snapshots for each loan
-4. **COGS**: Summed across all snapshots for each loan
-5. **Repayments**: Filtered to only Jan-Mar 2025 vintage loans
-
-## Maintenance
-
-- All models use incremental loading where applicable
-- Partitioned by date for query performance
-- Clustered by commonly filtered columns
