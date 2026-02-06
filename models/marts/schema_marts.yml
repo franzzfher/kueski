@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: dim_loans
+    description: "loan dimension view"
+    columns:
+      - name: loan_id
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "foreign key to customer"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: user_id
+
+  - name: fct_vintage_performance
+    description: "vintage performance facts view"
+    columns:
+      - name: vintage_month
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_risk_segment_performance
+    description: "risk segment performance facts view"
+    columns:
+      - name: risk_segment
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
