@@ -15,8 +15,8 @@
 
 WITH loans AS (
     SELECT 
-        DISTINCT loan_id
-        ,TO_JSON_STRING(original_schedule) AS original_schedule
+        loan_id
+        ,original_schedule AS original_schedule
   
     FROM {{ ref('stg_loans') }}
     WHERE original_schedule IS NOT NULL
@@ -24,6 +24,7 @@ WITH loans AS (
     {% if is_incremental() %}
         AND disbursed_date >= DATE_ADD(CURRENT_DATE(), INTERVAL -15 DAY)
     {% endif %}
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY loan_id ORDER BY loan_id) = 1
 )
   
 , flattened_schedule AS (
