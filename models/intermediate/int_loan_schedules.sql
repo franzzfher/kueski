@@ -2,7 +2,7 @@
     config(
         materialized='incremental',
         incremental_strategy = 'merge',
-        unique_key = '_installment_id', 
+        unique_key = '_schedule_id', 
         partition_by={
             "field": "expected_due_date",
             "data_type": "date",
@@ -45,9 +45,13 @@ SELECT
     
     -- key for the merge strategy
     ,TO_HEX(MD5(CONCAT(
-        loan_id, 
-        '-', 
-        CAST(expected_due_date AS STRING)
-    ))) AS _installment_id
+        loan_id,
+        '-',
+        SAFE_CAST(expected_due_date AS STRING)
+    ))) AS _schedule_id
   
 FROM flattened_schedule
+
+
+
+
