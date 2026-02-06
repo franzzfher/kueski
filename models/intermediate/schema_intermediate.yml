@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: int_loan_schedules
+    description: "flattened repayment schedules"
+    columns:
+      - name: _schedule_id
+        description: "surrogate primary key"
+        tests:
+          - unique
+          - not_null
+      - name: loan_id
+        description: "foreign key to loan"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_loans')
+              field: loan_id
+
+  - name: int_repayments_aggregated
+    description: "repayments aggregated by loan"
+    columns:
+      - name: loan_id
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_loans')
+              field: loan_id
+
+  - name: int_loans_enriched
+    description: "enriched loan data (golden record)"
+    columns:
+      - name: loan_id
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "foreign key to customer"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: user_id
+
+  - name: int_vintage_performance
+    description: "aggregated vintage metrics"
+    columns:
+      - name: vintage_month
+        description: "primary key (cohort month)"
+        tests:
+          - unique
+          - not_null
+
+  - name: int_risk_segment_performance
+    description: "aggregated risk segment metrics"
+    columns:
+      - name: risk_segment
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
