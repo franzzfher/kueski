@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-This dbt project implements a layered data architecture for analyzing KueskiPay's loan portfolio performance. It follows dbt best practices with staging, intermediate, and mart layers.
+This dbt project implements a layered data architecture for analyzing KueskiPay's loan portfolio performance. 
 
 ## Architecture Layers
 
