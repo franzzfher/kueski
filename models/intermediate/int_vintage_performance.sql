@@ -67,8 +67,5 @@ SELECT
     ,SUM(CASE WHEN final_status = 'Open Default' THEN 1 ELSE 0 END) AS open_default_count
     ,SUM(CASE WHEN final_status = 'Current' THEN 1 ELSE 0 END) AS current_count
 
-    -- audit
-    ,CURRENT_TIMESTAMP() AS _loaded_at
-
-FROM {{ ref('int_loan_enriched_corrected') }}
+FROM {{ ref('int_loans_enriched') }}
 GROUP BY 1
