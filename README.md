@@ -1,5 +1,5 @@
 
-```markdown
+
 # KueskiPay Portfolio Analytics - dbt Project
 
 ## Project Overview
