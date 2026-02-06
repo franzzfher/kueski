@@ -96,26 +96,4 @@ models:
         description: "Risk band assigned at acquisition"
       - name: cac_amount
         description: "Customer acquisition cost"
-
-  - name: stg_schedules
-    description: "Staging model for payment schedules"
-    columns:
-      - name: _schedule_id
-        description: "Unique schedule identifier"
-        tests:
-          - unique
-          - not_null
-      - name: loan_id
-        description: "Loan identifier"
-        tests:
-          - not_null
-      - name: expected_due_date
-        description: "Expected payment due date"
-      - name: expected_total_payment
-        description: "Expected total payment amount"
-      - name: expected_principal
-        description: "Expected principal portion"
-      - name: expected_interest
-        description: "Expected interest portion"
-      - name: installment_number
-        description: "Installment sequence number"
+        
