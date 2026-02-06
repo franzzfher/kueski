@@ -21,7 +21,6 @@ SELECT
     ,requested_amount
     ,interest_rate
     ,loan_term_months
-    ,num_installments
 
     -- expected amounts
     ,expected_principal
