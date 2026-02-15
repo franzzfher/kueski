@@ -1,6 +1,3 @@
-Certainly! I’ve reformatted your documentation into a clean, professional Markdown structure. I’ve applied a clear hierarchy, utilized LaTeX for the financial formulas to ensure technical precision, and organized the data into scannable tables.
-
----
 
 # Technical Documentation: Behavioral Clustering Enhancement for Q1 2025 Portfolio Analysis
 
@@ -177,9 +174,3 @@ Raw Loan Data (enriched.csv)
 3. **Stability**: Clusters should be re-validated monthly to ensure the K-Means centroids remain representative of current behavior.
 
 **Document Version**: 1.0
-
-**Owner**: Data Science / Risk Analytics Team
-
----
-
-**Would you like me to generate a Python template to help you start the K-Means implementation for this data?**
